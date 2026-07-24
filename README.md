@@ -1,2 +1,1 @@
-# Footymetrics
-This is a repository for Football analytics. 
+# Autonomous SRE Agent
