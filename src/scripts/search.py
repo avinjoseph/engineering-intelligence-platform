@@ -15,6 +15,7 @@ DB_DSN = os.environ.get(
 TOP_K = 5  # Number of top results to return
 VECTOR_WEIGHT = 0.6
 KEYWORD_WEIGHT = 0.4
+MIN_VECTOR_SCORE = 0.55  # Minimum vector similarity score to consider
 
 def embed(text: str) -> list[float]:
     """Get embeddings for the given text using Ollama API."""
@@ -55,7 +56,7 @@ def search(query:str, top_k:int = TOP_K) -> list[dict]:
     rows = cur.fetchall()
     cur.close()
     
-    return [
+    results = [
         {
             "text": row[0],
             "source": row[1],
@@ -65,11 +66,15 @@ def search(query:str, top_k:int = TOP_K) -> list[dict]:
         for row in rows
     ]   
     
+    return [r for r in results if r["vector_score"] >= MIN_VECTOR_SCORE]
+    
     
 if __name__ == "__main__":
     query = " ".join(sys.argv[1:]) or "checkout latency"
     results = search(query)
     print(f"\nQuery: {query!r}\n")
+    if not results:
+        print(f"No results above relevance threshold of {MIN_VECTOR_SCORE}.\n")
     for i, r in enumerate(results, 1):
         print(f"[{i}] source={r['source']}  vector={r['vector_score']}  keyword={r['keyword_score']}")
         print(f"    {r['text'][:150]}...\n")
