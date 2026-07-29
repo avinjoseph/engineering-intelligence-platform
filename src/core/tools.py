@@ -2,7 +2,6 @@ from typing import Any, Dict  # noqa: UP035
 
 
 def check_service_status(service_hint: str) -> Dict[str, Any]:
-    
     return {
         "service": service_hint,
         "status": "unknown - no live monitoring tool connected yet",
@@ -15,6 +14,5 @@ def run_tools(state) -> Dict[str, Any]:
     question = state["question"]
     result = check_service_status(service_hint = question)
     return {
-        "tool_outputs": [result],
-        "message": "Tools executed successfully - this is a placeholder implementation"
-    }
+        "tool_results": [result]
+        }
