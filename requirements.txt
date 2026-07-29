@@ -2,3 +2,4 @@ psycopg2-binary>=2.9
 requests>=2.31
 sqlalchemy>=2.0
 pgvector>=0.2
+langgraph>=0.2
