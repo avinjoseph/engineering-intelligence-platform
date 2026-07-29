@@ -3,6 +3,10 @@ import os
 
 import psycopg2
 import requests
+from langchain_text_splitters import (
+    MarkdownHeaderTextSplitter,
+    RecursiveCharacterTextSplitter,
+)
 
 DOC_DIR = "tests/docs"
 OLLAMA_URL = "http://localhost:11434/api/embeddings"
@@ -16,15 +20,28 @@ DB_DSN = os.environ.get(
 CHUNK_SIZE = 500  # Number of characters per chunk
 CHUNK_OVERLAP = 50  # Number of overlapping characters between chunks
 
+headers_to_split_on = [
+    ("#", "Header 1"),
+    ("##", "Header 2"),
+    ("###", "Header 3"),
+]
+
 def chunk_text(text:str, size:int = CHUNK_SIZE, overlap:int = CHUNK_OVERLAP) -> list[str]:
     """Split text into chunks of specified size with overlap."""
     chunks = []
-    start = 0
-    while start < len(text):
-        end = start + size
-        chunks.append(text[start:end].strip())
-        start += size - overlap
-    return [c for c in chunks if c]  # Remove empty chunks
+    
+    markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on,
+                                                   strip_headers=False)
+  
+    structural_chunks = markdown_splitter.split_text(text)
+    
+    recursive_splitter = RecursiveCharacterTextSplitter(
+        chunk_size = CHUNK_SIZE,
+        chunk_overlap = CHUNK_OVERLAP
+    )
+    
+    final_chunks = recursive_splitter.split_documents(structural_chunks)
+    return [c for c in final_chunks if c]  # Remove empty chunks
 
 
 def embed(text:str) -> list[float]:
@@ -52,10 +69,14 @@ def ingest_file(cur, file_path:str) -> None:
     
     print(f" {source}: {len(chunks)} chunks")
     for chunk in chunks:
-        vector = embed(chunk)
+        header_context = " > ".join(chunk.metadata.values())
+        rich_text = f"Section: {header_context}\n\n{chunk.page_content}" if header_context else chunk.page_content
+        
+        # Embed the rich text so the vector understands the context
+        vector = embed(rich_text)
         cur.execute(
             "INSERT INTO chunks (document_id, chunk_text, embedding) VALUES (%s, %s, %s)",
-            (doc_id, chunk, vector)
+            (doc_id, chunk.page_content, vector)
         )
         
 def main():
