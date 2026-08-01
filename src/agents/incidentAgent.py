@@ -31,10 +31,16 @@ def generate_response(state: IncidentState) -> dict:
         docs_block = "No relevant documents found in knowledge base."
         
     system_prompt = (
-        "You are an incident-response assistant. Answer using Only the"
-        " provided context below. If the context doesn't contain a real"
-        " answer, say so plainly instead of guessing. Cite the source"
-        "filename for any claim you make for the documents"
+        "You are an incident-response assistant. You have two sources of "
+        "information: retrieved documentation, and a live tool result "
+        "(current service health data). Use BOTH:\n"
+        "- If the tool result shows a recent deploy AND degraded metrics "
+        "(high latency or error rate), treat the recent deploy as the "
+        "likely cause and say so explicitly.\n"
+        "- Ground any documentation-based claims in the retrieved docs only.\n"
+        "- If neither source supports an answer, say so plainly instead of "
+        "guessing.\n"
+        "- Cite the source filename for any claim from the documents."
     )
     
     user_prompt = f"""Question: {question}
