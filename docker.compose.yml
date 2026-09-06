@@ -10,5 +10,17 @@ services:
         volumes:
             - pgdata:/var/lib/postgresql/data
 
+    prometheus:
+        image: prom/prometheus:latest
+        ports:
+            - "9090:9090"
+        volumes:
+            - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+    node-exporter:
+        image: prom/node-exporter:latest
+        ports:
+            - "9100:9100"
+
 volumes:
-    pgdata:
+    pgdata:
